@@ -1,0 +1,146 @@
+// Saved for later use
+// function tableSetup(table) {
+// 	print(table.getRowCount() + " total rows in table");
+// 	print(table.getColumnCount() + " total cols in table");
+// 	print("hello");
+
+// 	//remove unnecessary cols in table
+// 	let cols_to_remove = ["sourceVersion", "startDate", "endDate", "device", "sourceName"];
+
+// 	for (let i = 0; i < cols_to_remove.length; i++) {
+// 		table.removeColumn(cols_to_remove[i]);
+// 		print("Column labeled " + cols_to_remove[i] + " removed");
+// 		print(table.getColumnCount());
+// 	}
+// 	print(table.getColumnCount());
+// }
+
+function getTableDates(table) {
+	let days = [];
+	let values = [];
+	for (i = 0; i < table.getRowCount(); i++) {
+		currDate = table.get(i, 'creationDate').slice(0, 10);
+		currValue = parseFloat(table.get(i, 'value'));
+
+		if (days.includes(currDate)) {
+			values[values.length - 1] += currValue;
+		} else {
+			days.push(currDate);
+			values.push(currValue);
+		}
+	}
+	//var result = {};
+	//days.forEach((key, i) => result[key] = values[i]);
+	return values;
+}
+
+function makeBoxes() {
+	for (i = 0; i < boxHeights.length; i++) {
+		randomChoice = Math.random();
+		textureWrap(CLAMP);
+		if (i % 5 === 0) {
+			texture(airpods);
+		} else if (i % 2 === 0) {
+			texture(watch);
+		} else {
+			texture(ipad);
+		}
+		//specularMaterial(250);
+		translate(width / boxHeights.length +5, 0, 0);
+		box(10, boxHeights[i] * 15, 30);
+	}
+}
+
+function makeSky() {
+	translate(0, -140, 0);
+	rotateX(PI / 2);
+	textureWrap(REPEAT);
+	texture(stars);
+	plane(5000, 5000);
+}
+
+
+/////////////// Program Start
+
+function preload() {
+	//table = loadTable('export_trim.csv', 'csv', 'header');
+	
+	//Load CSV files of cleaned data
+	audioExposure = loadTable('audioExposure.csv', 'csv', 'header');
+	exerciseTime = loadTable('exerciseTime.csv', 'csv', 'header');
+	flightsClimbed = loadTable('flightsClimbed.csv', 'csv', 'header');
+	walkingHeartRate = loadTable('walkingHeartRate.csv', 'csv', 'header');
+	
+	// load texture images
+	iphone = loadImage("iphone.jpg");
+	watch = loadImage("watch.jpg");
+	airpods = loadImage("airpods.jpg");
+	ipad = loadImage("ipad.jpg");
+	stars = loadImage("hyad.JPG");
+}
+
+let boxHeights;
+let textures;
+let movement = 0;
+let currentStep = 0;
+
+function setup() {
+	createCanvas(1112, 834, WEBGL);
+	
+	//Parse data into groups by day
+	boxHeights = getTableDates(flightsClimbed);
+	exerciseTime = getTableDates(exerciseTime);
+	
+	//verify data
+	print(boxHeights);
+	print(exerciseTime);
+	
+	//store for iteration
+	textures = [iphone, watch, airpods];
+	mouseX = width / 2;
+	mouseY = height / 2;
+}
+
+function draw() {
+	background(120);
+	
+	//set camera
+	camera(0, -30, 50, width, mouseY - height / 2, mouseX - width / 2, 0, 1, 0);
+	perspective(PI / 3.0, width / height, 0.1, width);
+	//move camera
+	let speed = frameCount * 0.01;
+	translate(-speed * 100, speed, -speed);
+	
+	// uncomment the next two lines before saving an image or thumbnail !!!
+	// this will invert the scene, so that it will be saved the right way up! (WEBGL bug)
+	// translate(0,-100, 90);
+  // rotateX(PI);
+	
+	//draw floor
+	push();
+	textureMode(NORMAL);
+	textureWrap(CLAMP);
+	texture(iphone);
+	rotateX(PI / 2);
+	translate(width / 2, 0, 0);
+	noStroke();
+	plane(width*2.5, 200);
+	pop();
+
+	//draw lights
+	ambientLight(40);
+	for (i = 0; i < exerciseTime.length; i++) {
+		pointLight(125, 125, exerciseTime[i] * 25, width / exerciseTime.length, 100, 0);
+	}
+	
+	//draw boxes and sky for loop iterations/animation
+	stroke(90, 0, 140);
+	push();
+	makeBoxes();
+	pop();
+	push();
+	translate(0, 0, 100);
+	makeBoxes();
+	pop();
+	makeSky();
+}
